@@ -7,10 +7,10 @@ function BetterDecompiler.MedalDecompiler(Script)
     local HttpService = game:GetService("HttpService")
     local url = "http://localhost:3366/decompile"
     
-    local bytecode = base64encode(getscriptbytecode(Script))
+    local bytecode = base64.encode(getscriptbytecode(Script))
 
     local requestBody = {
-        script = bytecode
+        bytecode
     }
     
     local headers = {
@@ -20,16 +20,16 @@ function BetterDecompiler.MedalDecompiler(Script)
     local jsonBody = HttpService:JSONEncode(requestBody)
     
     local success, response = pcall(function()
-        local result = HttpService:RequestAsync({
+        local result = request({
             Url = url,
             Method = "POST",
             Headers = headers,
             Body = jsonBody
         })
         
-        if result.Success and result.StatusCode == 200 then
-            local resultData = HttpService:JSONDecode(result.Body)
-            return resultData.fixed_script
+        if result.StatusCode == 200 then
+            local DecompiledCode = base64.decode(result.Body)
+            return DecompiledCode
         else
             warn("Request failed with status code: " .. (result.StatusCode or "unknown"))
             warn("Response body: " .. (result.Body or "no response body"))
@@ -40,7 +40,7 @@ function BetterDecompiler.MedalDecompiler(Script)
         warn("An error occurred: " .. response)
     end
     
-    return base64.decode(Script)
+    return response
 end
 
 function BetterDecompiler.decompile(scr)
@@ -55,4 +55,6 @@ function BetterDecompiler.decompile(scr)
     return srcScript
 end
 
+getgenv().decompile = BetterDecompiler.decompile
+decompile = BetterDecompiler.decompile
 return BetterDecompiler.decompile
